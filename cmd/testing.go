@@ -16,7 +16,7 @@ var testingCmd = &cobra.Command{
 	Use:   "test",
 	Short: "Test",
 	Long:  `It's a test'`,
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		u, err := user.FromDB(args[0])
@@ -47,7 +47,7 @@ var testinGCmd = &cobra.Command{
 	Use:   "code",
 	Short: "Test",
 	Long:  `It's a test'`,
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		u, err := user.FromDB(args[0])

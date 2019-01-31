@@ -17,11 +17,11 @@ type User struct {
 	Initialised bool
 }
 
-func New(name string) (*User) {
+func New(name string) *User {
 	var u = new(User)
 
 	k, err := totp.Generate(totp.GenerateOpts{
-		Issuer: "totp-ovpn",
+		Issuer:      "totp-ovpn",
 		AccountName: name,
 	})
 	if err != nil {
@@ -33,7 +33,7 @@ func New(name string) (*User) {
 	return u
 }
 
-func FromDB (name string) (*User, error) {
+func FromDB(name string) (*User, error) {
 	db, err := storm.Open("my.db")
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +57,7 @@ func (u *User) GenerateQR() (io.Reader, error) {
 		return nil, errors.Wrap(err, "while generating QR code parameters")
 	}
 
-	var buf  = new(bytes.Buffer)
+	var buf = new(bytes.Buffer)
 	img, err := key.Image(200, 200)
 	if err != nil {
 		return nil, errors.Wrap(err, "while generating QR code image")

@@ -10,7 +10,7 @@ func Verify(passcode string, name string) (valid bool, e error) {
 
 	u, err := FromDB(name)
 	if err != nil {
-		return false, errors.Wrap(err,"while searching for user")
+		return false, errors.Wrap(err, "while searching for user")
 	}
 
 	k, _ := otp.NewKeyFromURL(u.Key)
