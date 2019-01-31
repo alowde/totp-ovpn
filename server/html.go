@@ -37,6 +37,14 @@ var qrContent = `
 <img src="/qr?user={{.User}}" /><br>
 		Text here centered`
 
+var csrUploadContent = `
+<form action="upload-csr" method="post" enctype="multipart/form-data">
+    Select CSR to upload:
+    <input type="file" name="fileToUpload" id="fileToUpload">
+    <input type="submit" value="Upload CSR" name="submit">
+</form>
+`
+
 func qrPage(w http.ResponseWriter, user string) error {
 
 	params := struct {
@@ -50,8 +58,15 @@ func qrPage(w http.ResponseWriter, user string) error {
 
 }
 
-/*
-var csrInputHTML = `
-    	<img src="/qr?user=cat"</img><br>
-    	Text here centered
-`*/
+func csrUploadPage(w http.ResponseWriter, user string) error {
+
+	params := struct {
+		Title string
+		User  string
+	}{"Upload a CSR", user}
+
+	t := template.New("csrUploadPage")
+	t, _ = t.Parse(head + csrUploadContent + tail)
+	return t.Execute(w, params)
+
+}
