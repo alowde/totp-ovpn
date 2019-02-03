@@ -38,6 +38,7 @@ func NewRequestFromReader(r *io.Reader) (req *Request, err error) {
 	req = new(Request)
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, *r)
+
 	req.csr, err = x509.ParseCertificateRequest(buf.Bytes())
 	if err != nil {
 		return nil, NewInvalidDERCSR(err)
