@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var ca = new(io.Reader)
+var ca *io.Reader
 var castr = `
 -----BEGIN CERTIFICATE-----
 MIIDZzCCAk+gAwIBAgIJAJ4Jrmm9AWxtMA0GCSqGSIb3DQEBCwUAMEoxCzAJBgNV
@@ -30,7 +30,7 @@ SLVW95k3qLe4vLUuVLOc+bVzSdCQjSQPmJlQDZZ0Jt8m3cfDjy/nDbSvBjPJknjX
 LjsIBtiil5Ekb6U=
 -----END CERTIFICATE-----`
 
-var keyPEMPKCS8RSA = new(io.Reader)
+var keyPEMPKCS8RSA *io.Reader
 var keyPEMPKCS8RSAstr = `
 -----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCl5diaKyaGVYl5
@@ -61,7 +61,7 @@ i6g3H8u3LhGLMHRb7f9cbgbCuSdnl3lKl76B8F53NeDzJfffH9eDEKzSPLcEw2P3
 pvDGXjiyopJQyh1Xj7d+2KY=
 -----END PRIVATE KEY-----`
 
-var keyPEMRSA = new(io.Reader)
+var keyPEMRSA *io.Reader
 var keyPEMRSAstr = `
 -----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEApeXYmismhlWJefUqDDfI7CW+Z2eT7pqq7OqbLdmRhaz8Qlz+
@@ -92,15 +92,59 @@ gfBedzXg8yX33x/XgxCs0jy3BMNj96bwxl44sqKSUModV4+3ftim
 -----END RSA PRIVATE KEY-----
 `
 
-func init() {
+var keyCSR *io.Reader
+var keyCSRstr = `
+-----BEGIN CERTIFICATE REQUEST-----
+MIICozCCAYsCAQAwXjELMAkGA1UEBhMCQVUxGDAWBgNVBAgMD1NvdXRoIEF1c3Ry
+YWxpYTERMA8GA1UEBwwIQWRlbGFpZGUxDDAKBgNVBAoMA0NhdDEUMBIGA1UEAwwL
+anVzdFNvbWVHdXkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCl5dia
+KyaGVYl59SoMN8jsJb5nZ5Pumqrs6pst2ZGFrPxCXP5DkSJPemVzvJjFxIKH+pFc
+old4kMmzpTBW+XB83UhXR/lSnbrzVSw8m0OVlv3wYnSWuwRg7VAhUmkgVfTw9PHT
+gUNVUlpuWihgVoZb4v552CdlTH8t6IH1Akgn/mmI+yuPs/AUmMxKGiI0d8+a2Edk
+NxH81cQXDgSoF3c2TTbdBtQD88gUFV6q4648yYbCQEGXAs0TQng/hb/+LWn708s5
+qW5ggOKQZjO1TafEDrfsLU5QIEf63FgMS8R0GRyxbS+B6APzqivfIgsiLWUlwjsZ
+OEyvTUVR+Rlpm7+JAgMBAAGgADANBgkqhkiG9w0BAQsFAAOCAQEAjOxjfXqifW1B
+pSv/dCkf8O5Y0pUy8K7sAR3qfjIkj+fFp58zsAhiazI1n2rF6elVBKypatXGnIQf
+ixbg4J7JaTW/9HyRgEO0NcR2QsMmz0UwZP4YfnzCIKFrPNk162UfsnlTU8nDOoy9
+Sb128BB2uSF5HY7+sgP1NW+ww/5B0sEVRuoxlfEqjkSAyNElWU9Hpj1/R75laqjv
+lFTwg++a5H33sPeQd9pJpoSly9waqtgqSrfVeOwdiWMlweLSYmFzrX/WQ1Ewfv/a
+kXbMfmvRWdARKmQ7DznvfKYDU9P3lBL3UOQpHJOrN70BvCMxye6ZzZrRhQCsoShq
+7r5h2w6Hgw==
+-----END CERTIFICATE REQUEST-----
+`
+
+func setup() {
+	ca = new(io.Reader)
+	keyPEMPKCS8RSA = new(io.Reader)
+	keyPEMRSA = new(io.Reader)
+	keyCSR = new(io.Reader)
 	*ca = bytes.NewReader([]byte(castr))
 	*keyPEMPKCS8RSA = bytes.NewReader([]byte(keyPEMPKCS8RSAstr))
 	*keyPEMRSA = bytes.NewReader([]byte(keyPEMRSAstr))
+	*keyCSR = bytes.NewReader([]byte(keyCSRstr))
 }
 
 func TestNewCAFromReaders(t *testing.T) {
-	_, err := NewCAFromReaders(ca, keyPEMPKCS8RSA, "")
-	if err != nil {
+	setup()
+	if _, err := NewCAFromReaders(ca, keyPEMPKCS8RSA, ""); err != nil {
 		t.Errorf("Failed to load CA with error %s", err)
+	}
+}
+
+func TestCA_SignRequest(t *testing.T) {
+	setup()
+
+	req, err := NewRequestFromReader(keyCSR)
+	if err != nil {
+		t.Fatalf("Failed to initialise CSR %s", err)
+	}
+
+	c, err := NewCAFromReaders(ca, keyPEMPKCS8RSA, "")
+	if err != nil {
+		t.Fatalf("Failed to load CA with error %s", err)
+	}
+
+	if err := c.SignRequest(req); err != nil {
+		t.Errorf("Failed to sign request with error %s", err)
 	}
 }

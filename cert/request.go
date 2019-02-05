@@ -3,7 +3,9 @@ package cert
 import (
 	"bytes"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"regexp"
 )
@@ -26,6 +28,18 @@ func NewInvalidDERCSR(err error) InvalidDERCSR {
 	return i
 }
 
+func parseCSR(csrRaw *bytes.Buffer) (csr *x509.CertificateRequest, err error) {
+
+	// If we can't decode the CSR as PEM data try just parsing it as a DER blob
+	csrPEMBlock, _ := pem.Decode(csrRaw.Bytes())
+	if csrPEMBlock == nil {
+		return x509.ParseCertificateRequest(csrRaw.Bytes())
+	}
+
+	return x509.ParseCertificateRequest(csrPEMBlock.Bytes)
+
+}
+
 type Request struct {
 	csr      *x509.CertificateRequest
 	crt      *x509.Certificate
@@ -38,10 +52,12 @@ func NewRequestFromReader(r *io.Reader) (req *Request, err error) {
 	req = new(Request)
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, *r)
-
-	req.csr, err = x509.ParseCertificateRequest(buf.Bytes())
 	if err != nil {
-		return nil, NewInvalidDERCSR(err)
+		return nil, errors.Wrap(err, "while reading")
+	}
+
+	if req.csr, err = parseCSR(buf); err != nil {
+		return nil, errors.Wrap(err, "while decoding CSR")
 	}
 
 	req.username = req.csr.Subject.CommonName

@@ -128,15 +128,15 @@ func (c *CA) SignRequest(req *Request) (err error) {
 	serial.SetBytes(serialBytes)
 
 	var certTemplate = x509.Certificate{
-		Signature:          req.crt.Signature,
-		SignatureAlgorithm: req.crt.SignatureAlgorithm,
+		Signature:          req.csr.Signature,
+		SignatureAlgorithm: req.csr.SignatureAlgorithm,
 
-		PublicKeyAlgorithm: req.crt.PublicKeyAlgorithm,
-		PublicKey:          req.crt.PublicKey,
+		PublicKeyAlgorithm: req.csr.PublicKeyAlgorithm,
+		PublicKey:          req.csr.PublicKey,
 
 		SerialNumber: serial,
 		Issuer:       c.cert.Subject,
-		Subject:      req.crt.Subject,
+		Subject:      req.csr.Subject,
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(365 * 24 * time.Hour), // TODO: Make configurable
 		KeyUsage:     x509.KeyUsageDigitalSignature,
