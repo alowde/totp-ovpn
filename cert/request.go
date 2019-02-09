@@ -47,11 +47,11 @@ type Request struct {
 	signed   bool
 }
 
-func NewRequestFromReader(r *io.Reader) (req *Request, err error) {
+func NewRequestFromReader(r io.Reader) (req *Request, err error) {
 
 	req = new(Request)
 	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, *r)
+	_, err = io.Copy(buf, r)
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading")
 	}

@@ -97,18 +97,18 @@ type CA struct {
 // NewCAFromReaders accepts an io.Reader for the certificate and key to be used for signing certificates, as well as an
 // optional password to decode the received certificate/key. It handles both RSA and ECDSA keys and attempts to read
 // un/encrypted PEM data, raw ASN.1 DER bytes and unencrypted PKCS#8 containers.
-func NewCAFromReaders(certReader *io.Reader, keyReader *io.Reader, password string) (result *CA, err error) {
+func NewCAFromReaders(certReader io.Reader, keyReader io.Reader, password string) (result *CA, err error) {
 
 	result = new(CA)
 
 	var certRaw = new(bytes.Buffer)
-	_, _ = io.Copy(certRaw, *certReader)
+	_, _ = io.Copy(certRaw, certReader)
 	if result.cert, err = parseCert(certRaw, []byte(password)); err != nil {
 		return nil, err
 	}
 
 	var keyRaw = new(bytes.Buffer)
-	_, _ = io.Copy(keyRaw, *keyReader)
+	_, _ = io.Copy(keyRaw, keyReader)
 	if result.key, err = parseKey(keyRaw, []byte(password)); err != nil {
 		return nil, err
 	}
