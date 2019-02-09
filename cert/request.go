@@ -43,7 +43,7 @@ func parseCSR(csrRaw *bytes.Buffer) (csr *x509.CertificateRequest, err error) {
 type Request struct {
 	csr      *x509.CertificateRequest
 	crt      *x509.Certificate
-	username string
+	Username string
 	signed   bool
 }
 
@@ -60,12 +60,12 @@ func NewRequestFromReader(r io.Reader) (req *Request, err error) {
 		return nil, errors.Wrap(err, "while decoding CSR")
 	}
 
-	req.username = req.csr.Subject.CommonName
+	req.Username = req.csr.Subject.CommonName
 
 	// Only valid usernames as per https://openvpn.net/community-resources/reference-manual-for-openvpn-2-4
 	// are allowed in the Common Name field
-	if ok, _ := regexp.Match("^[0-9A-Za-z_.@-]+$", []byte(req.username)); !ok {
-		fmt.Println(req.username)
+	if ok, _ := regexp.Match("^[0-9A-Za-z_.@-]+$", []byte(req.Username)); !ok {
+		fmt.Println(req.Username)
 		return nil, InvalidNameError{}
 	}
 
