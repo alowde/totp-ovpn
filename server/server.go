@@ -25,7 +25,7 @@ func Run() error {
 		}
 	}()
 
-	http.Handle("/", http.HandlerFunc(sayHello))
+	http.Handle("/", http.HandlerFunc(renderEnrollUser))
 	http.Handle("/qr", http.HandlerFunc(renderQR))
 	http.Handle("/upload-csr", http.HandlerFunc(acceptCSR))
 
@@ -44,10 +44,8 @@ func redirectTLS(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusFound)
 }
 
-func sayHello(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(csrUploadPage(w, "cat"))
-	//fmt.Println(qrPage(w, "cat"))
-
+func renderEnrollUser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(renderPageEnrollUser(w))
 }
 
 func renderQR(w http.ResponseWriter, r *http.Request) {
@@ -78,13 +76,15 @@ func acceptCSR(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("fileToUpload")
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
 	}
 	defer file.Close()
 
-	f := io.Reader(file)
-	_, err = cert.NewRequestFromReader(&f)
+	req, err := cert.NewRequestFromReader(io.Reader(file))
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+	fmt.Printf("Received CSR for user %s", req.Username)
 
 }
