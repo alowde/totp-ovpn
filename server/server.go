@@ -3,7 +3,9 @@ package server
 import (
 	"fmt"
 	"github.com/alowde/totp-ovpn/cert"
+	"github.com/alowde/totp-ovpn/session"
 	"github.com/alowde/totp-ovpn/user"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"net/http"
@@ -16,7 +18,11 @@ var CertPath string = "cert.pem"
 
 var MaxCSRSize int64 = 10 * 1024
 
+var sessionTable *session.SessionTable
+
 func Run() error {
+
+	sessionTable = session.NewSessionTable(0)
 
 	// Always redirect http->https
 	go func() {
@@ -85,6 +91,27 @@ func acceptCSR(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+
+	u, err := user.FromDB(req.Username)
+	if err != nil {
+		if _, ok := errors.Cause(err).(user.ErrUserNotFound); ok {
+			w.WriteHeader(http.StatusForbidden)
+			renderPageAuthError(w, "user or password invalid")
+			return
+		}
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := u.ValidatePassword(r.PostForm.Get("password")); err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		renderPageAuthError(w, "user or password invalid")
+		return
+	}
+
+	// User and password are OK, allow the enrollment of a QR code
+	sessionTable.Add(u.Username)
+
 	fmt.Printf("Received CSR for user %s", req.Username)
 
 }
