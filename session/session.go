@@ -3,11 +3,12 @@ package session
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"sync"
 	"time"
 )
 
-const defaultSessionTime = 300 // Default session time is 300 seconds
+const DefaultSessionTime = 300 // Default session time is 300 seconds
 const sessionKeyLength = 20    // Session keys are 40 bytes
 
 type session struct {
@@ -50,7 +51,7 @@ func NewSessionTable(duration int) *SessionTable {
 	s := new(SessionTable)
 	s.sessions = make(map[string]session)
 	s.mutex = new(sync.Mutex)
-	s.sessionTime = defaultSessionTime * time.Second
+	s.sessionTime = DefaultSessionTime * time.Second
 	if duration > 0 && duration < 86400 {
 		s.sessionTime = time.Duration(duration) * time.Second
 	}
@@ -58,20 +59,24 @@ func NewSessionTable(duration int) *SessionTable {
 }
 
 // Add adds a user to the session table and returns a crypto-randomly generated key.
-func (st *SessionTable) Add(user string) (key []byte) {
+func (st *SessionTable) Add(user string) (key string) {
 	st.mutex.Lock()
 	st.sessions[user] = newSession(st.sessionTime)
 	st.mutex.Unlock()
-	return st.sessions[user].key
+	return base64.StdEncoding.EncodeToString(st.sessions[user].key)
 }
 
 // Valid determines whether a user and key are associated with each other and less than sessionTime seconds old.
-func (st *SessionTable) Valid(user string, key []byte) bool {
+func (st *SessionTable) Valid(user string, key string) bool {
 	st.ExpireOldSessions()
 	st.mutex.Lock()
 	defer st.mutex.Unlock()
+	byteKey, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return false
+	}
 	if session, ok := st.sessions[user]; ok {
-		if session.valid(key) {
+		if session.valid(byteKey) {
 			return true
 		}
 	}

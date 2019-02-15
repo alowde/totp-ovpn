@@ -50,7 +50,7 @@ func redirectTLS(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusFound)
 }
 
-func renderEnrollUser(w http.ResponseWriter, r *http.Request) {
+func renderEnrollUser(w http.ResponseWriter, _ *http.Request) {
 	fmt.Println(renderPageEnrollUser(w))
 }
 
@@ -96,7 +96,7 @@ func acceptCSR(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if _, ok := errors.Cause(err).(user.ErrUserNotFound); ok {
 			w.WriteHeader(http.StatusForbidden)
-			renderPageAuthError(w, "user or password invalid")
+			_ = renderPageAuthError(w, "user or password invalid")
 			return
 		}
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -105,13 +105,19 @@ func acceptCSR(w http.ResponseWriter, r *http.Request) {
 
 	if err := u.ValidatePassword(r.PostForm.Get("password")); err != nil {
 		w.WriteHeader(http.StatusForbidden)
-		renderPageAuthError(w, "user or password invalid")
+		_ = renderPageAuthError(w, "user or password invalid")
 		return
 	}
 
-	// User and password are OK, allow the enrollment of a QR code
-	sessionTable.Add(u.Username)
-
-	fmt.Printf("Received CSR for user %s", req.Username)
-
+	// User and password are OK, create a session cookie and allow the enrollment of a QR code
+	cookie := http.Cookie{
+		Name:     "totp-ovpn-session",
+		Value:    sessionTable.Add(u.Username),
+		MaxAge:   session.DefaultSessionTime,
+		HttpOnly: true,
+		Secure:   true,
+	}
+	http.SetCookie(w, &cookie)
+	_ = renderPageQR(w, u.Username)
+	return
 }

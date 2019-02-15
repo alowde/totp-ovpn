@@ -27,7 +27,7 @@ func (e ErrUserNotFound) Error() string {
 	return e.err.Error()
 }
 
-func New(name string) *User {
+func New(name, password string) *User {
 	var u = new(User)
 
 	k, err := totp.Generate(totp.GenerateOpts{
@@ -35,11 +35,13 @@ func New(name string) *User {
 		AccountName: name,
 	})
 	if err != nil {
-		panic("failed to gen key")
+		log.Panic("failed to gen key")
 	}
 	u.Key = k.URL()
 	u.Username = name
-
+	if err := u.SetPassword(password); err != nil {
+		log.Panicf("unexpected error while trying to set password: %s", err)
+	}
 	return u
 }
 

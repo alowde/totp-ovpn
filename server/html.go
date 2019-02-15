@@ -80,7 +80,7 @@ func renderPageQR(w http.ResponseWriter, user string) error {
 	params := struct {
 		Title string
 		User  string
-	}{"Enroll a New User", user}
+	}{"Create 2FA Key", user}
 
 	t := template.New("renderPageQR")
 	t, _ = t.Parse(head + qrContent + tail)
