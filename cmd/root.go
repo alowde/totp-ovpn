@@ -7,9 +7,6 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(userCmd)
-	userCmd.AddCommand(addUserCmd)
-	userCmd.AddCommand(verifyUserCmd)
 	rootCmd.AddCommand(testingCmd)
 	rootCmd.AddCommand(testinGCmd)
 	rootCmd.AddCommand(serveCmd)
