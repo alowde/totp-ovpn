@@ -7,7 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"log"
+	"os"
+	"strconv"
 )
+
+var IncSensitive bool
 
 func init() {
 	rootCmd.AddCommand(userCmd)
@@ -75,5 +79,39 @@ var verifyUserCmd = &cobra.Command{
 			log.Fatalln(errors.New("Encountered a bug, invalid passcode"))
 		}
 		return
+	},
+}
+
+var listUsersCmd = &cobra.Command{
+	Use:   "list",
+	Short: "Print a list of users",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		db, err := storm.Open("my.db")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		var users []user.User
+		if err := db.All(&users); err != nil {
+			log.Fatalf("Error while querying DB: %s\n", err)
+		}
+
+		table := tablewriter.NewWriter(os.Stdout)
+		if IncSensitive {
+			table.SetHeader([]string{"Username", "OTP Key", "Initialised"})
+		} else {
+			table.SetHeader([]string{"Username", "Initialised"})
+		}
+		table.SetBorder(false)
+		for _, v := range users {
+			if IncSensitive {
+				table.Append([]string{v.Username, v.Key, strconv.FormatBool(v.Initialised)})
+			} else {
+				table.Append([]string{v.Username, strconv.FormatBool(v.Initialised)})
+			}
+		}
+		table.Render()
 	},
 }
