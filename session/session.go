@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -81,6 +83,16 @@ func (st *SessionTable) Valid(user string, key string) bool {
 		}
 	}
 	return false
+}
+
+// ValidRequest wraps Valid for convenient validation of an HTTP request by checking for a valid cookie
+func (st *SessionTable) ValidRequest(user string, r *http.Request) bool {
+	cookie, err := r.Cookie("totp-ovpn-session")
+	if err != nil {
+		fmt.Println("rejected due to cookie not found")
+		return false
+	}
+	return st.Valid(user, cookie.Value)
 }
 
 // ExpireOldSessions deletes expired sessions from the session table to avoid excessive memory use over time.

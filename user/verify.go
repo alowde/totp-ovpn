@@ -6,7 +6,7 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
-func Verify(passcode string, name string) (valid bool, e error) {
+func Verify(name, passcode string) (valid bool, e error) {
 
 	u, err := FromDB(name)
 	if err != nil {

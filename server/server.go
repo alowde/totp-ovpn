@@ -34,6 +34,7 @@ func Run() error {
 	http.Handle("/", http.HandlerFunc(renderEnrollUser))
 	http.Handle("/qr", http.HandlerFunc(renderQR))
 	http.Handle("/upload-csr", http.HandlerFunc(acceptCSR))
+	http.Handle("/verify-2fa", http.HandlerFunc(verify2FA))
 
 	if err := http.ListenAndServeTLS(":443", CertPath, KeyPath, nil); err != nil {
 		return err
@@ -54,9 +55,16 @@ func renderEnrollUser(w http.ResponseWriter, _ *http.Request) {
 	fmt.Println(renderPageEnrollUser(w))
 }
 
+// Render a QR image that encodes a user's TOTP secret
 func renderQR(w http.ResponseWriter, r *http.Request) {
+	formUser := r.URL.Query().Get("user")
 
-	u, err := user.FromDB(r.URL.Query().Get("user"))
+	if !sessionTable.ValidRequest(formUser, r) {
+		http.Error(w, "nope", http.StatusNotFound)
+		return
+	}
+
+	u, err := user.FromDB(formUser)
 	if err != nil {
 		http.Error(w, "nope", http.StatusNotFound)
 		return
@@ -120,4 +128,8 @@ func acceptCSR(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 	_ = renderPageQR(w, u.Username)
 	return
+}
+
+func verify2FA(w http.ResponseWriter, r *http.Request) {
+	renderPage2FAFail(w)
 }
